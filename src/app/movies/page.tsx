@@ -1,53 +1,74 @@
-// 📁 src/app/movies/page.tsx — 电影目录（显示个人评分）
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+// 📁 src/app/movies/page.tsx — 电影目录（客户端本地过滤，点标签秒切）
+'use client'
+
+import { useEffect, useState, useMemo, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import type { Movie } from '@/types/movie'
 
-async function getMovies(): Promise<{ movies: Movie[]; ratings: Record<number, number> }> {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll() {},
-      },
-    }
-  )
-  const { data } = await supabase.from('movies').select('*').order('year', { ascending: false })
-  const movies = (data as Movie[]) || []
+function MoviesContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const activeGenre = searchParams.get('genre')
+  const supabase = createClient()
 
-  // 获取当前用户的个人评分
-  const { data: { user } } = await supabase.auth.getUser()
-  let ratings: Record<number, number> = {}
-  if (user) {
-    const { data: memories } = await supabase
-      .from('movie_memories')
-      .select('movie_id, personal_rating')
-      .eq('user_id', user.id)
-    if (memories) {
-      for (const m of memories) {
-        if (m.personal_rating) ratings[m.movie_id] = m.personal_rating
+  const [movies, setMovies] = useState<Movie[]>([])
+  const [ratings, setRatings] = useState<Record<number, number>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.from('movies').select('*').order('year', { ascending: false })
+      setMovies((data as Movie[]) || [])
+
+      // 获取个人评分
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: memories } = await supabase
+          .from('movie_memories')
+          .select('movie_id, personal_rating')
+          .eq('user_id', user.id)
+        if (memories) {
+          const r: Record<number, number> = {}
+          for (const m of memories) {
+            if (m.personal_rating) r[m.movie_id] = m.personal_rating
+          }
+          setRatings(r)
+        }
       }
+      setLoading(false)
     }
+    load()
+  }, [])
+
+  const allGenres = useMemo(
+    () => [...new Set(movies.flatMap(m => m.genres || []))].sort(),
+    [movies]
+  )
+
+  const filtered = useMemo(
+    () => activeGenre
+      ? movies.filter(m => m.genres?.includes(activeGenre))
+      : movies,
+    [movies, activeGenre]
+  )
+
+  const switchGenre = (genre: string | null) => {
+    const params = new URLSearchParams()
+    if (genre) params.set('genre', genre)
+    const qs = params.toString()
+    router.replace(`/movies${qs ? '?' + qs : ''}`, { scroll: false })
   }
 
-  return { movies, ratings }
-}
-
-export default async function MoviesPage(props: { searchParams: Promise<{ genre?: string }> }) {
-  const searchParams = await props.searchParams
-  const activeGenre = searchParams.genre || null
-
-  const { movies, ratings } = await getMovies()
-  const allGenres = [...new Set(movies.flatMap(m => m.genres || []))].sort()
-
-  // 按类型过滤
-  const filtered = activeGenre
-    ? movies.filter(m => m.genres?.includes(activeGenre))
-    : movies
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-[#8888a0] text-sm">
+        <span className="inline-block w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin mr-2" />
+        加载中…
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen relative z-[2] px-6 pt-10 pb-20 max-w-7xl mx-auto">
@@ -57,10 +78,10 @@ export default async function MoviesPage(props: { searchParams: Promise<{ genre?
         {activeGenre && <span className="ml-2 opacity-60">（{activeGenre}）</span>}
       </p>
 
-      {/* Filter */}
+      {/* Filter — 客户端切换，不触发页面加载 */}
       <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-white/[0.06]">
-        <Link
-          href="/movies"
+        <button
+          onClick={() => switchGenre(null)}
           className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
             !activeGenre
               ? 'bg-[#c0392b] text-white'
@@ -68,11 +89,11 @@ export default async function MoviesPage(props: { searchParams: Promise<{ genre?
           }`}
         >
           🎬 全部
-        </Link>
+        </button>
         {allGenres.map(g => (
-          <Link
+          <button
             key={g}
-            href={`/movies?genre=${encodeURIComponent(g)}`}
+            onClick={() => switchGenre(g)}
             className={`px-4 py-1.5 rounded-full text-xs transition-all ${
               activeGenre === g
                 ? 'bg-[#c0392b] text-white'
@@ -80,7 +101,7 @@ export default async function MoviesPage(props: { searchParams: Promise<{ genre?
             }`}
           >
             {g}
-          </Link>
+          </button>
         ))}
       </div>
 
@@ -131,5 +152,15 @@ export default async function MoviesPage(props: { searchParams: Promise<{ genre?
         ))}
       </div>
     </div>
+  )
+}
+
+export default function MoviesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center text-[#8888a0] text-sm">加载中…</div>
+    }>
+      <MoviesContent />
+    </Suspense>
   )
 }
