@@ -1,10 +1,10 @@
-// 📁 src/app/movies/page.tsx — 电影目录（movies.html 风格）
+// 📁 src/app/movies/page.tsx — 电影目录（显示个人评分）
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import type { Movie } from '@/types/movie'
 
-async function getMovies(): Promise<Movie[]> {
+async function getMovies(): Promise<{ movies: Movie[]; ratings: Record<number, number> }> {
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,11 +17,28 @@ async function getMovies(): Promise<Movie[]> {
     }
   )
   const { data } = await supabase.from('movies').select('*').order('year', { ascending: false })
-  return (data as Movie[]) || []
+  const movies = (data as Movie[]) || []
+
+  // 获取当前用户的个人评分
+  const { data: { user } } = await supabase.auth.getUser()
+  let ratings: Record<number, number> = {}
+  if (user) {
+    const { data: memories } = await supabase
+      .from('movie_memories')
+      .select('movie_id, personal_rating')
+      .eq('user_id', user.id)
+    if (memories) {
+      for (const m of memories) {
+        if (m.personal_rating) ratings[m.movie_id] = m.personal_rating
+      }
+    }
+  }
+
+  return { movies, ratings }
 }
 
 export default async function MoviesPage() {
-  const movies = await getMovies()
+  const { movies, ratings } = await getMovies()
   const allGenres = [...new Set(movies.flatMap(m => m.genres || []))].sort()
 
   return (
@@ -83,10 +100,10 @@ export default async function MoviesPage() {
               </div>
             </div>
 
-            {movie.tmdb_rating && (
-              <div className="absolute top-3 right-3 glass px-2 py-1 rounded-lg text-xs text-[var(--gold)] font-bold
-                opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                ★ {movie.tmdb_rating}
+            {/* 个人评分 */}
+            {ratings[movie.id] && (
+              <div className="absolute top-3 right-3 glass px-2 py-1 rounded-lg text-xs text-[var(--gold)] font-bold">
+                ★ {ratings[movie.id]}
               </div>
             )}
           </Link>
