@@ -5,7 +5,7 @@ import Navbar from "@/components/navbar"
 import ParticlesBackground from "@/components/particles"
 
 export const metadata: Metadata = {
-  title: "🎬 电影档案馆 — 个人电影记忆",
+  title: "🎬 Jo's land — 个人电影记忆",
   description: "一个人通过电影记录自己人生变化的档案系统",
 }
 

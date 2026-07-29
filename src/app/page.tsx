@@ -51,7 +51,7 @@ export default async function HomePage() {
       {/* Hero */}
       <header className="relative z-[2] text-center px-6 pt-16 pb-8 bg-gradient-to-b from-[#c0392b]/[0.06] to-transparent">
         <h1 className="font-display text-5xl md:text-7xl font-bold mb-2 gradient-gold leading-tight">
-          🎬 电影档案馆
+          🎬 Jo's land
         </h1>
         <p className="text-[#8888a0] text-lg tracking-[4px]">
           — {movies.length > 0 ? `${movies.length} 部电影，每一帧都是记忆` : '每一帧都是记忆'} —

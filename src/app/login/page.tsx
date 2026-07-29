@@ -44,7 +44,7 @@ function LoginForm() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-[#d4a760] to-[#c0392b] bg-clip-text text-transparent mb-2">
             🎬 登录
           </h1>
-          <p className="text-[#8888a0] text-sm">进入你的电影档案馆</p>
+          <p className="text-[#8888a0] text-sm">进入 Jo's land</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">

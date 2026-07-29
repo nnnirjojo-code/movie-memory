@@ -37,7 +37,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2">
           <span className="text-lg">🎬</span>
           <span className="font-title text-xl gradient-gold font-bold">
-            电影档案馆
+            Jo's land
           </span>
         </Link>
 
