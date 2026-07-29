@@ -37,26 +37,47 @@ async function getMovies(): Promise<{ movies: Movie[]; ratings: Record<number, n
   return { movies, ratings }
 }
 
-export default async function MoviesPage() {
+export default async function MoviesPage(props: { searchParams: Promise<{ genre?: string }> }) {
+  const searchParams = await props.searchParams
+  const activeGenre = searchParams.genre || null
+
   const { movies, ratings } = await getMovies()
   const allGenres = [...new Set(movies.flatMap(m => m.genres || []))].sort()
+
+  // 按类型过滤
+  const filtered = activeGenre
+    ? movies.filter(m => m.genres?.includes(activeGenre))
+    : movies
 
   return (
     <div className="min-h-screen relative z-[2] px-6 pt-10 pb-20 max-w-7xl mx-auto">
       <h1 className="font-title text-4xl font-bold gradient-gold mb-1">🎬 电影库</h1>
-      <p className="text-[#8888a0] text-sm mb-6">共 {movies.length} 部电影</p>
+      <p className="text-[#8888a0] text-sm mb-6">
+        共 {filtered.length} 部电影
+        {activeGenre && <span className="ml-2 opacity-60">（{activeGenre}）</span>}
+      </p>
 
       {/* Filter */}
       <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-white/[0.06]">
-        <Link href="/movies" className="px-4 py-1.5 rounded-full bg-[#c0392b] text-white text-xs font-medium">
+        <Link
+          href="/movies"
+          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+            !activeGenre
+              ? 'bg-[#c0392b] text-white'
+              : 'border border-white/[0.1] text-[#8888a0] hover:border-[#c0392b] hover:text-white'
+          }`}
+        >
           🎬 全部
         </Link>
         {allGenres.map(g => (
           <Link
             key={g}
             href={`/movies?genre=${encodeURIComponent(g)}`}
-            className="px-4 py-1.5 rounded-full border border-white/[0.1] text-[#8888a0] text-xs
-              hover:border-[#c0392b] hover:text-white transition-all"
+            className={`px-4 py-1.5 rounded-full text-xs transition-all ${
+              activeGenre === g
+                ? 'bg-[#c0392b] text-white'
+                : 'border border-white/[0.1] text-[#8888a0] hover:border-[#c0392b] hover:text-white'
+            }`}
           >
             {g}
           </Link>
@@ -65,7 +86,7 @@ export default async function MoviesPage() {
 
       {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-        {movies.map((movie, i) => (
+        {filtered.map((movie, i) => (
           <Link
             key={movie.id}
             href={`/movies/${movie.id}`}
