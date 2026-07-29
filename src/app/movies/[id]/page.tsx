@@ -1,4 +1,4 @@
-// 📁 src/app/movies/[id]/page.tsx — 电影详情页（画廊风格）
+// 📁 src/app/movies/[id]/page.tsx — 电影详情页
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
@@ -45,33 +45,23 @@ export default async function MovieDetailPage({ params }: PageProps) {
         {/* Backdrop header */}
         {movie.backdrop_url && (
           <div className="relative h-48 md:h-64 rounded-2xl overflow-hidden mb-8">
-            <img
-              src={movie.backdrop_url}
-              alt=""
-              className="w-full h-full object-cover opacity-30"
-            />
+            <img src={movie.backdrop_url} alt="" className="w-full h-full object-cover opacity-30" />
             <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-transparent to-transparent" />
           </div>
         )}
 
-        {/* Two-column layout */}
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* LEFT: Poster area + screenshots */}
+          {/* LEFT: Poster + Media */}
           <div className="lg:w-[55%] flex-shrink-0">
             {movie.poster_url ? (
-              <img
-                src={movie.poster_url}
-                alt={movie.title}
-                className="w-full max-w-md rounded-2xl shadow-[var(--shadow)] mx-auto"
-              />
+              <img src={movie.poster_url} alt={movie.title}
+                className="w-full max-w-md rounded-2xl shadow-[var(--shadow)] mx-auto" />
             ) : (
               <div className="w-full max-w-md aspect-[2/3] rounded-2xl bg-[var(--card)]
                 flex items-center justify-center text-[#8888a0] font-title text-2xl mx-auto">
                 {movie.title}
               </div>
             )}
-
-            {/* Screenshots / Videos */}
             <div className="mt-6">
               <MovieMedia movieId={movie.id} isLoggedIn={isLoggedIn} />
             </div>
@@ -86,27 +76,19 @@ export default async function MovieDetailPage({ params }: PageProps) {
               <p className="text-[#8888a0] text-sm mb-5 tracking-wide">{movie.original_title}</p>
             )}
 
-            {/* Meta tags */}
+            {/* Meta */}
             <div className="flex flex-wrap gap-3 mb-6 text-sm">
               {movie.year && (
-                <span className="px-3 py-1 rounded-full bg-white/[0.06] text-[#8888a0] flex items-center gap-1">
-                  📅 {movie.year}
-                </span>
+                <span className="px-3 py-1 rounded-full bg-white/[0.06] text-[#8888a0] flex items-center gap-1">📅 {movie.year}</span>
               )}
               {movie.director && (
-                <span className="px-3 py-1 rounded-full bg-white/[0.06] text-[#8888a0] flex items-center gap-1">
-                  🎬 {movie.director}
-                </span>
+                <span className="px-3 py-1 rounded-full bg-white/[0.06] text-[#8888a0] flex items-center gap-1">🎬 {movie.director}</span>
               )}
               {movie.duration && (
-                <span className="px-3 py-1 rounded-full bg-white/[0.06] text-[#8888a0] flex items-center gap-1">
-                  ⏱ {movie.duration} 分钟
-                </span>
+                <span className="px-3 py-1 rounded-full bg-white/[0.06] text-[#8888a0] flex items-center gap-1">⏱ {movie.duration} 分钟</span>
               )}
               {movie.tmdb_rating && (
-                <span className="px-3 py-1 rounded-full bg-[#d4a760]/[0.1] text-[#d4a760] flex items-center gap-1">
-                  ★ {movie.tmdb_rating}
-                </span>
+                <span className="px-3 py-1 rounded-full bg-[#d4a760]/[0.1] text-[#d4a760] flex items-center gap-1">★ {movie.tmdb_rating}</span>
               )}
             </div>
 
@@ -114,9 +96,7 @@ export default async function MovieDetailPage({ params }: PageProps) {
             {movie.genres && movie.genres.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-6">
                 {movie.genres.map(g => (
-                  <span key={g} className="px-3 py-1 rounded-lg bg-[#c0392b]/10 text-[#e74c3c] text-xs font-medium">
-                    {g}
-                  </span>
+                  <span key={g} className="px-3 py-1 rounded-lg bg-[#c0392b]/10 text-[#e74c3c] text-xs font-medium">{g}</span>
                 ))}
               </div>
             )}
@@ -124,9 +104,7 @@ export default async function MovieDetailPage({ params }: PageProps) {
             {/* Country */}
             {movie.country && movie.country.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-6 text-xs text-[#8888a0]">
-                {movie.country.map(c => (
-                  <span key={c} className="px-2 py-0.5 rounded bg-white/[0.03]">{c}</span>
-                ))}
+                {movie.country.map(c => <span key={c} className="px-2 py-0.5 rounded bg-white/[0.03]">{c}</span>)}
               </div>
             )}
 
@@ -136,26 +114,13 @@ export default async function MovieDetailPage({ params }: PageProps) {
                 <div className="text-[10px] uppercase tracking-[2px] text-[#8888a0] mb-2">🎭 主演</div>
                 <div className="flex flex-wrap gap-2">
                   {movie.actors.map(a => (
-                    <span key={a} className="text-xs text-[#8888a0] bg-white/[0.03] px-3 py-1 rounded-lg">
-                      {a}
-                    </span>
+                    <span key={a} className="text-xs text-[#8888a0] bg-white/[0.03] px-3 py-1 rounded-lg">{a}</span>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Overview */}
-            {movie.overview && (
-              <div className="mb-6">
-                <div className="text-[10px] uppercase tracking-[2px] text-[#8888a0] mb-2">📖 简介</div>
-                <div className="text-sm leading-relaxed text-[var(--text)] bg-white/[0.02] border-l-3 border-[var(--accent)]
-                  rounded-r-lg px-4 py-3">
-                  {movie.overview}
-                </div>
-              </div>
-            )}
-
-            {/* 已保存的记忆 — 对所有访客可见 */}
+            {/* 已保存的记忆 */}
             {memory && memory.public_review && (
               <div className="mt-8">
                 <div className="text-[10px] uppercase tracking-[2px] text-[var(--gold)] mb-2">💭 我的记忆</div>
@@ -174,25 +139,20 @@ export default async function MovieDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Memory 编辑表单 — 登录后显示 */}
+            {/* 记忆编辑表单 */}
             {isLoggedIn && (
               <div className="mt-6">
                 <MovieMemoryForm movieId={movie.id} movieTitle={movie.title} />
               </div>
             )}
 
-            {/* Not logged in — 提示登录 */}
+            {/* 提示登录 */}
             {!isLoggedIn && !memory?.public_review && (
               <div className="mt-8 text-center py-10 border border-dashed border-white/[0.1] rounded-xl">
                 <div className="text-3xl mb-3 opacity-30">💭</div>
                 <p className="font-title text-xl text-[#8888a0]">登录后可以添加你的观影记忆</p>
-                <Link
-                  href="/login"
-                  className="inline-block mt-4 px-6 py-2 rounded-xl bg-gradient-to-r from-[#c0392b] to-[#e74c3c]
-                    text-white text-sm hover:opacity-90 transition-opacity"
-                >
-                  登录
-                </Link>
+                <Link href="/login" className="inline-block mt-4 px-6 py-2 rounded-xl bg-gradient-to-r from-[#c0392b] to-[#e74c3c]
+                  text-white text-sm hover:opacity-90 transition-opacity">登录</Link>
               </div>
             )}
           </div>

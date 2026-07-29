@@ -24,6 +24,7 @@ export default function MovieMedia({ movieId, isLoggedIn }: Props) {
   const [uploadPhase, setUploadPhase] = useState('')
   const [tab, setTab] = useState<'screenshot' | 'clip'>('screenshot')
   const [preview, setPreview] = useState<{ url: string; type: 'image' | 'video' } | null>(null)
+  const [previewIdx, setPreviewIdx] = useState(-1)
   const router = useRouter()
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -185,6 +186,33 @@ export default function MovieMedia({ movieId, isLoggedIn }: Props) {
     setItems(prev => prev.filter(x => x.id !== item.id))
   }
 
+  // 预览导航
+  function goPrev() {
+    const screenshotItems = items.filter(i => i.file_type === 'screenshot')
+    const idx = screenshotItems.findIndex(i => i.public_url === preview?.url)
+    if (idx > 0) {
+      const prev = screenshotItems[idx - 1]
+      setPreview({ url: prev.public_url || '', type: 'image' })
+      setPreviewIdx(items.indexOf(prev))
+    }
+  }
+  function goNext() {
+    const screenshotItems = items.filter(i => i.file_type === 'screenshot')
+    const idx = screenshotItems.findIndex(i => i.public_url === preview?.url)
+    if (idx < screenshotItems.length - 1) {
+      const next = screenshotItems[idx + 1]
+      setPreview({ url: next.public_url || '', type: 'image' })
+      setPreviewIdx(items.indexOf(next))
+    }
+  }
+  function goTo(idx: number) {
+    const item = items[idx]
+    if (item) {
+      setPreview({ url: item.public_url || '', type: item.file_type === 'clip' ? 'video' : 'image' })
+      setPreviewIdx(idx)
+    }
+  }
+
   return (
     <div>
       {/* Tab 切换 */}
@@ -211,7 +239,7 @@ export default function MovieMedia({ movieId, isLoggedIn }: Props) {
       {items.length > 0 && (
         <div className="mb-4">
           <div className={`grid gap-3 ${tab === 'clip' ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'}`}>
-            {items.map(item => (
+            {items.map((item, i) => (
               <div key={item.id} className="group relative rounded-xl overflow-hidden bg-[var(--card)]">
                 {item.file_type === 'clip' ? (
                   <video
@@ -219,12 +247,11 @@ export default function MovieMedia({ movieId, isLoggedIn }: Props) {
                     controls
                     preload="metadata"
                     className="w-full aspect-video object-cover bg-black cursor-pointer"
-                    onClick={() => setPreview({ url: item.public_url || '', type: 'video' })}
+                    onClick={() => { setPreview({ url: item.public_url || '', type: 'video' }); setPreviewIdx(i); }}
                     onError={(e) => {
                       const video = e.target as HTMLVideoElement
                       const error = video.error
                       console.error('Video error code:', error?.code, 'message:', error?.message)
-                      console.error('Video network state:', video.networkState, 'ready state:', video.readyState)
                     }}
                   />
                 ) : (
@@ -232,7 +259,7 @@ export default function MovieMedia({ movieId, isLoggedIn }: Props) {
                     src={item.public_url || ''}
                     alt=""
                     className="w-full aspect-video object-cover cursor-pointer"
-                    onClick={() => setPreview({ url: item.public_url || '', type: 'image' })}
+                    onClick={() => { setPreview({ url: item.public_url || '', type: 'image' }); setPreviewIdx(i); }}
                   />
                 )}
 
@@ -280,32 +307,46 @@ export default function MovieMedia({ movieId, isLoggedIn }: Props) {
 
       {/* 预览弹窗 */}
       {preview && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 cursor-zoom-out"
-          onClick={() => setPreview(null)}
+        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6"
+          onClick={() => { setPreview(null); setPreviewIdx(-1); }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') goPrev()
+            if (e.key === 'ArrowRight') goNext()
+            if (e.key === 'Escape') { setPreview(null); setPreviewIdx(-1); }
+          }}
         >
-          {preview.type === 'video' ? (
-            <video
-              src={preview.url}
-              controls
-              autoPlay
-              className="max-w-full max-h-full rounded-2xl shadow-2xl"
-              onClick={e => e.stopPropagation()}
-            />
-          ) : (
-            <img
-              src={preview.url}
-              alt=""
-              className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl"
-            />
+          {previewIdx >= 0 && previewIdx < items.length && items.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50
+                  text-white text-xl flex items-center justify-center hover:bg-[var(--accent)]
+                  transition-all z-10">
+                ‹
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); goNext(); }}
+                className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50
+                  text-white text-xl flex items-center justify-center hover:bg-[var(--accent)]
+                  transition-all z-10">
+                ›
+              </button>
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-2 px-4 py-2 rounded-full bg-black/50">
+                {items.map((_, idx) => (
+                  <button key={idx} onClick={(e) => { e.stopPropagation(); goTo(idx); }}
+                    className={`w-2 h-2 rounded-full transition-all ${idx === previewIdx ? 'bg-[var(--accent)] w-6' : 'bg-white/30'}`} />
+                ))}
+              </div>
+            </>
           )}
-          <button
-            onClick={() => setPreview(null)}
+          {preview.type === 'video' ? (
+            <video src={preview.url} controls autoPlay
+              className="max-w-full max-h-full rounded-2xl shadow-2xl"
+              onClick={e => e.stopPropagation()} />
+          ) : (
+            <img src={preview.url} alt="" className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl" />
+          )}
+          <button onClick={() => { setPreview(null); setPreviewIdx(-1); }}
             className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/60 text-white text-lg
-              flex items-center justify-center hover:bg-[var(--accent)] transition-colors"
-          >
-            ✕
-          </button>
+              flex items-center justify-center hover:bg-[var(--accent)] transition-colors">✕</button>
         </div>
       )}
     </div>
