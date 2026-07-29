@@ -1,18 +1,8 @@
-// 📁 src/app/api/movies/sync/[id]/route.ts — 将 TMDB 数据同步到本地数据库
+// 📁 src/app/api/movies/sync/[id]/route.ts — 同步 TMDB 数据到本地数据库
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-
-const TMDB_BASE = 'https://api.themoviedb.org/3'
-
-async function fetchTMDBMovie(id: string) {
-  const res = await fetch(
-    `${TMDB_BASE}/movie/${id}?api_key=${process.env.TMDB_API_KEY}&language=zh-CN&append_to_response=credits`,
-    { next: { revalidate: 86400 } }
-  )
-  if (!res.ok) throw new Error('TMDB fetch failed')
-  return res.json()
-}
+import { getMovieDetail } from '@/lib/tmdb'
 
 export async function POST(
   _request: Request,
@@ -43,8 +33,8 @@ export async function POST(
   }
 
   try {
-    // 1. 从 TMDB 获取数据
-    const tmdb = await fetchTMDBMovie(id)
+    // 1. 从 TMDB 获取数据（走代理）
+    const tmdb = await getMovieDetail(id)
 
     // 2. 提取需要的数据
     const director = tmdb.credits?.crew?.find(
@@ -87,11 +77,11 @@ export async function POST(
     if (error) throw error
 
     return NextResponse.json({ success: true, movie: data })
-  } catch (error) {
-    console.error('Sync error:', error)
-    return NextResponse.json(
-      { error: '同步失败' },
-      { status: 500 }
-    )
+  } catch (error: any) {
+    console.error('Sync error:', error?.cause || error.message)
+    const msg = error?.cause?.code === 'UND_ERR_CONNECT_TIMEOUT'
+      ? '连接 TMDB 超时 — 请检查 VPN 代理是否开启'
+      : '同步失败 — ' + (error?.cause?.message || error.message || String(error))
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

@@ -1,12 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 
 :root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --card: #1a1a26;
   --accent: #c0392b;
   --accent2: #e74c3c;
   --gold: #d4a760;
-}
+  --text: #e8e8ee;
+  --text2: #8888a0;
+  --radius: 16px;
+  --shadow: 0 8px 32px rgba(0,0,0,.6);
 
-@theme {
   --color-bg: #0a0a0f;
   --color-bg2: #12121a;
   --color-card: #1a1a26;
@@ -18,13 +24,64 @@
   --color-border: rgba(255,255,255,.08);
 }
 
+html { scroll-behavior: smooth; }
+
 body {
-  background: #0a0a0f;
-  color: #e8e8ee;
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
+.font-title {
+  font-family: 'Ma Shan Zheng', 'Noto Sans SC', sans-serif;
+}
+
+.font-display {
+  font-family: 'Archivo Black', sans-serif;
+}
+
+/* ====== Particles canvas ====== */
+#particles-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ====== Stagger fade-up animation ====== */
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anim-fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeUp .5s ease forwards;
+}
+
+/* ====== Card hover ====== */
+.card-hover-glow:hover {
+  box-shadow: 0 16px 48px rgba(192,57,43,.3);
+}
+
+/* ====== Scrollbar ====== */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ====== Gradient text ====== */
+.gradient-gold {
+  background: linear-gradient(135deg, var(--gold), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ====== Glass blur ====== */
+.glass {
+  background: rgba(0,0,0,.6);
+  backdrop-filter: blur(8px);
+}
