@@ -1,11 +1,11 @@
 // 📁 src/app/login/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -55,8 +55,7 @@ export default function LoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.1]
-                text-white placeholder-[#8888a0] outline-none focus:border-[#c0392b]
-                transition-colors"
+                text-white placeholder-[#8888a0] outline-none focus:border-[#c0392b] transition-colors"
               placeholder="your@email.com"
               required
             />
@@ -69,8 +68,7 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.1]
-                text-white placeholder-[#8888a0] outline-none focus:border-[#c0392b]
-                transition-colors"
+                text-white placeholder-[#8888a0] outline-none focus:border-[#c0392b] transition-colors"
               placeholder="••••••••"
               required
             />
@@ -94,5 +92,15 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center text-[#8888a0]">加载中…</div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

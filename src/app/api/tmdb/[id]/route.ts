@@ -1,8 +1,6 @@
-// 📁 src/app/api/tmdb/[id]/route.ts — TMDB 电影详情代理
+// 📁 src/app/api/tmdb/[id]/route.ts
 import { NextResponse } from 'next/server'
-
-const TMDB_BASE = 'https://api.themoviedb.org/3'
-const TMDB_KEY = process.env.TMDB_API_KEY
+import { getMovieDetail } from '@/lib/tmdb'
 
 export async function GET(
   _request: Request,
@@ -10,35 +8,13 @@ export async function GET(
 ) {
   const { id } = await params
 
-  if (!TMDB_KEY) {
-    return NextResponse.json(
-      { error: 'TMDB_API_KEY 未配置' },
-      { status: 500 }
-    )
-  }
-
   try {
-    const res = await fetch(
-      `${TMDB_BASE}/movie/${id}?api_key=${TMDB_KEY}&language=zh-CN&append_to_response=credits`,
-      { next: { revalidate: 86400 } } // 缓存 24 小时
-    )
-
-    if (!res.ok) {
-      if (res.status === 404) {
-        return NextResponse.json({ error: '电影未找到' }, { status: 404 })
-      }
-      return NextResponse.json(
-        { error: 'TMDB API 错误' },
-        { status: res.status }
-      )
-    }
-
-    const data = await res.json()
+    const data = await getMovieDetail(id)
     return NextResponse.json(data)
-  } catch (error) {
-    console.error('TMDB fetch error:', error)
+  } catch (error: any) {
+    console.error('TMDB detail error:', error?.cause || error.message)
     return NextResponse.json(
-      { error: '获取电影信息失败' },
+      { error: '获取电影信息失败 — 请检查 VPN 是否开启' },
       { status: 500 }
     )
   }

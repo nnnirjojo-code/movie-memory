@@ -1,8 +1,8 @@
-// 📁 src/middleware.ts — Supabase Auth 会话刷新
+// 📁 src/proxy.ts — Supabase Auth 会话刷新（Next.js 16）
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -26,7 +26,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // 刷新会话（重要！）
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -37,7 +36,6 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(p)
   )
 
-  // 如果是私有页面但未登录，重定向到登录页
   if (isProtected && !user && !request.nextUrl.pathname.startsWith('/login')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

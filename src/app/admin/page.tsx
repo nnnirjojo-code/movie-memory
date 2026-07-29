@@ -27,13 +27,19 @@ export default function AdminPage() {
     if (!query.trim()) return
     setSearching(true)
     setResults([])
+    setMessage('')
 
     try {
       const res = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}`)
       const data = await res.json()
-      setResults(data.results || [])
+
+      if (data.error) {
+        setMessage(`❌ ${data.error}`)
+      } else {
+        setResults(data.results || [])
+      }
     } catch (e) {
-      setMessage('搜索失败')
+      setMessage('❌ 搜索失败 — 可能是网络问题，需要开 VPN 翻墙')
     }
     setSearching(false)
   }

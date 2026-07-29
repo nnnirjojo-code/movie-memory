@@ -30,7 +30,7 @@ export default async function MoviesPage() {
 
   // 提取所有类型和年份用于过滤
   const allGenres = [...new Set(movies.flatMap(m => m.genres || []))].sort()
-  const allYears = [...new Set(movies.map(m => m.year).filter(Boolean))].sort((a, b) => b - a)
+  const allYears = [...new Set(movies.map(m => m.year).filter((y): y is number => y !== null))].sort((a, b) => b - a)
 
   return (
     <div className="min-h-screen px-6 py-10 max-w-7xl mx-auto">

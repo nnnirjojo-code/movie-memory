@@ -1,8 +1,6 @@
-// 📁 src/app/api/tmdb/search/route.ts — TMDB 搜索代理
+// 📁 src/app/api/tmdb/search/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-
-const TMDB_BASE = 'https://api.themoviedb.org/3'
-const TMDB_KEY = process.env.TMDB_API_KEY
+import { searchMovies } from '@/lib/tmdb'
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')
@@ -12,24 +10,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: '缺少搜索关键词' }, { status: 400 })
   }
 
-  if (!TMDB_KEY) {
-    return NextResponse.json({ error: 'TMDB_API_KEY 未配置' }, { status: 500 })
-  }
-
   try {
-    const res = await fetch(
-      `${TMDB_BASE}/search/movie?query=${encodeURIComponent(query)}&language=zh-CN&page=${page}&include_adult=false`,
-      { next: { revalidate: 3600 } }
-    )
-
-    if (!res.ok) {
-      return NextResponse.json({ error: 'TMDB API 错误' }, { status: res.status })
-    }
-
-    const data = await res.json()
+    const data = await searchMovies(query, page)
     return NextResponse.json(data)
-  } catch (error) {
-    console.error('TMDB search error:', error)
-    return NextResponse.json({ error: '搜索失败' }, { status: 500 })
+  } catch (error: any) {
+    console.error('TMDB search error:', error?.cause || error.message)
+    const msg = error?.cause?.code === 'UND_ERR_CONNECT_TIMEOUT'
+      ? '连接 TMDB 超时 — 请检查 VPN 代理是否开启（端口 10818）'
+      : '搜索失败 — ' + (error?.cause?.message || error.message)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
